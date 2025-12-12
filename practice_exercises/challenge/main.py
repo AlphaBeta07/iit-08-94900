@@ -6,11 +6,7 @@ load_dotenv()
 
 api_key = os.getenv("API_KEY")
 
-if not api_key:
-    print("No API key found. Add API_KEY in .env file.")
-    raise SystemExit(1)
-
-city = input("Enter city name: ").strip()
+city = input("Enter city name: ")
 url = "https://api.openweathermap.org/data/2.5/weather"
 params = {"q": city,"appid": api_key,"units": "metric"}
 
