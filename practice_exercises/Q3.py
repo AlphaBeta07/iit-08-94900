@@ -1,7 +1,7 @@
 import requests
 import json
 
-url = "https://nilesh-g.github.io/learn-web/data/novels.json"
+url = "https://jsonplaceholder.typicode.com/posts"
 
 try:
     data = requests.get(url).json()
