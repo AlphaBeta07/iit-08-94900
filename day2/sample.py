@@ -5,7 +5,9 @@ st.title("ChatBot")
 with st.slider:
     st.header("Settings")
     options = ["Upper", "Lower", "Toggle"]
-    case = st.selectbox("Sel")
+    case = st.selectbox("Select case", options)
+    
+
 
 name = st.text_input("enter name)")
 message  = st.text_area("enter your name: ", height = 100)
