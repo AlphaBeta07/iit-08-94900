@@ -4,22 +4,20 @@ def log_in():
         st.success(st.session_state["Logout_message"])
         del st.session_state["Logout_message"]
 
-    username = st.text_input("Enter Username")
-    password = st.text_input("Enter password", type = "password")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if (username == "Anish" and password == "1234"):
-            st.success("Logged In")
-            st.session_state["Login"] = True
-            st.rerun
-
-        else: 
-            st.write("Incorrect username or password")
+        if username == "Anish" and password == "1234":
+            return True
+        else:
+            st.error("Invalid username or password")
+    return False
 
 def log_out():
     logout = st.button("Logout")
     if logout:
         st.session_state["Logout_message"] = "You have been logged out Successfully"
         st.session_state["Login"] = True
-        st.rerun
+        st.rerun()
 

@@ -14,5 +14,3 @@ def csv():
         if st.button("exectue"):
             result = sqldf(query, {"df": df})
             st.dataframe(result)
-
-csv()
