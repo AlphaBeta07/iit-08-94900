@@ -1,4 +1,4 @@
-import Q2
+import log_io
 import weather
 import streamlit as st
 
@@ -7,6 +7,6 @@ if "Login" not in st.session_state:
 
 if st.session_state["Login"]:
     weather.weather()
-    Q2.log_out()
+    log_io.log_out()
 else:
-    Q2.log_in()
+    log_io.log_in()
