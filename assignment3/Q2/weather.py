@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+st.set_page_config(page_title="Weather app")
+
 api_key = os.getenv("API_KEY")
 def weather():
     st.title("Weather App")

@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+st.set_page_config(page_title="Login page")
+                   
 api_key = os.getenv("API_KEY")
 def log_in():
     st.title("Login Weather App")
@@ -14,9 +16,8 @@ def log_in():
     password = st.text_input("Enter password", type="password")
     if st.button("login", type = "primary"):
         if (username == "Anish" and password == "1234"):
-            st.write("Login successful")
+            st.success("Login successful")
             st.session_state["Login"] = True
-            st.balloons()
             st.rerun() 
         else:
             st.write("Incorrect username or password ")
