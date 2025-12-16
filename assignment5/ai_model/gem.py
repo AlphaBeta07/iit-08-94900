@@ -20,7 +20,7 @@ if user_msg:
 
     response = requests.post(url, headers = headers, data = json.dumps(data))
     if response.status_code == 200:
-        reply = response.json()
+        reply = response.json
         bot_reply = reply["candidates"][0]["content"]["parts"][0]["text"]
         st.write(user_msg)
         st.write("→")
