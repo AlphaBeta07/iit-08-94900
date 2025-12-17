@@ -7,11 +7,11 @@ import streamlit as st
 
 load_dotenv()
 
-api_key = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={api_key}"
+GOOGLE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={GOOGLE_API_KEY}"
 
-headers = {"Content-Type": "application/json"}
+GOOGLE_HEADERS = {"Content-Type": "application/json"}
 
 st.title("AskAnish", text_alignment= "center")
 
@@ -38,7 +38,7 @@ if user_msg:
     data = {"contents": [{"parts": [{"text": user_msg}]}]}
 
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=10)
+        response = requests.post(GOOGLE_URL, headers=GOOGLE_HEADERS, data=json.dumps(data), timeout=10)
         
         if response.status_code == 200:
             reply = response.json()
