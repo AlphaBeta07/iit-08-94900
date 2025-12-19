@@ -1,7 +1,10 @@
+import streamlit as st
 from langchain.chat_models import init_chat_model
 import os
 import pandas as pd
+import pandasql as ps
 from dotenv import load_dotenv
+
 load_dotenv()
 
 llm = init_chat_model(
@@ -12,26 +15,37 @@ llm = init_chat_model(
 )
 
 conversation = [
-    {"role":"system", "conten": "Yous are SQLite expert developer with 10 years of experience." }
+    {"role":"system", "content": "Yous are SQLite expert developer with 10 years of experience." }
 ]
 
-csv_file = input("Enter the file csv file")
-df = pd.read_csv(csv_file)
-print("CSV Schema : ")
-print(df.dtypes)
+csv_file = st.file_uploader("Select the csv file")
+if csv_file is not None:
+    df = pd.read_csv(csv_file)
 
-while True:
-    user_input = input("Enter the message")
-    if user_input == "exit":
-        break
-    llm_input = f"""
-        Table Name : data
-        Table Schema : {df.dtypes}
-        Question : {user_input}
-        Instruction:
-            write a SQL query for the above question
-            generate SQL query only in plain text format and run the SQL command and display the dataframe
-            it you cannot generate the query print `error`
-    """
-    result = llm.invoke(llm_input)
-    print(result.content)
+    st.dataframe(df)
+
+    user_input = st.chat_input("Enter the message")
+    if user_input:
+        llm_input = f"""
+            Table Name : data
+            Table Schema : {df}
+            Question : {user_input}
+            Instruction:
+                write a SQL query for the above question only,
+                generate SQL query only in plain text format,
+                give only query and nothing else so that i can run it directly without any changes, 
+                if you cannot generate the query print `error`
+        """
+        query = llm.invoke(llm_input)
+        
+        st.write(query.content)
+
+        if query.content == "error":
+            st.write("error")
+        else:
+            result_table = ps.sqldf(query.content, {"data": df})
+            st.write(result_table)
+
+
+
+#  display the  product_id, product_name, category, price, quantity whose quantity is above the average of price
