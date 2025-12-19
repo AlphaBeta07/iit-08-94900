@@ -45,7 +45,3 @@ if csv_file is not None:
         else:
             result_table = ps.sqldf(query.content, {"data": df})
             st.write(result_table)
-
-
-
-#  display the  product_id, product_name, category, price, quantity whose quantity is above the average of price
