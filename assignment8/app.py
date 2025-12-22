@@ -71,39 +71,26 @@ def log_messages(messages):
         print(m)
     print("---------------------------")
 
-
-math = input("enter math equation")
 response1 = agent.invoke({
     "messages": [
-        {"role": "user", "content": math}
+        {"role": "user", "content": "Calculate 15 * 4 + 20"}
     ]
 })
 log_messages(response1["messages"])
 print("Final Answer:", response1["messages"][-1].content)
 
-
-city = input("enter message(for weather)")
 response2 = agent.invoke({
     "messages": [
-        {"role": "user", "content": city}
+        {"role": "user", "content": "What is the current weather in Pune?"}
     ]
 })
 log_messages(response2["messages"])
 print("Final Answer:", response2["messages"][-1].content)
 
-path = input("enter message(for weather)")
 response3 = agent.invoke({
-    "messages": [
-        {"role": "user", "content": path}
-    ]
-})
-log_messages(response3["messages"])
-print("Final Answer:", response3["messages"][-1].content)
-
-response4 = agent.invoke({
     "messages": [
         {"role": "user", "content": "Explain LangChain"}
     ]
 })
-log_messages(response4["messages"])
-print("Final Answer:", response4["messages"][-1].content)
+log_messages(response3["messages"])
+print("Final Answer:", response3["messages"][-1].content)
