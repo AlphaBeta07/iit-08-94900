@@ -54,4 +54,6 @@ def csv(llm, add_chat):
 
                 except Exception as e:
                     st.error("SQL execution failed")
-                    add_chat("assistant", str(e))
+                    st.code(str(e))            # SHOW REAL ERROR
+                    st.code(sql_query)         # SHOW SQL
+                    add_chat("assistant", f"SQL Error: {e}")

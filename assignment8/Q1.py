@@ -26,8 +26,11 @@ def calculator(expression: str) -> str:
 @tool
 def file_reader(path: str) -> str:
     """Read a text file and return its content."""
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        return f"File error: {e}"
 
 @tool
 def current_weather(city: str) -> str:
@@ -90,10 +93,10 @@ response2 = agent.invoke({
 log_messages(response2["messages"])
 print("Final Answer:", response2["messages"][-1].content)
 
-path = input("enter file path")
+path = input("Enter full file path: ")
 response3 = agent.invoke({
     "messages": [
-        {"role": "user", "content": path}
+        {"role": "user", "content": f"Read this file and return its contents: {path}"}
     ]
 })
 log_messages(response3["messages"])
