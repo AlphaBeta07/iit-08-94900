@@ -38,14 +38,14 @@ def current_weather(city: str) -> str:
         "appid": WEATHER_API_KEY,
         "units": "metric"
     }
-    r = requests.get(url, params=params, timeout=8)
-    r.raise_for_status()
-    d = r.json()
+    response = requests.get(url, params=params, timeout=8)
+    # response.raise_for_status()
+    result = response.json()
     return (
-        f"Temperature: {d['main']['temp']}°C, "
-        f"Feels like: {d['main']['feels_like']}°C, "
-        f"Humidity: {d['main']['humidity']}%, "
-        f"Weather: {d['weather'][0]['description']}"
+        f"Temperature: {result['main']['temp']}°C, "
+        f"Feels like: {result['main']['feels_like']}°C, "
+        f"Humidity: {result['main']['humidity']}%, "
+        f"Weather: {result['weather'][0]['description']}"
     )
 
 @tool
@@ -69,10 +69,9 @@ def log_messages(messages):
     print("----- MESSAGE HISTORY -----")
     for m in messages:
         print(m)
-    print("---------------------------")
 
 
-math = input("enter math equation")
+math = input("enter math equation : ")
 response1 = agent.invoke({
     "messages": [
         {"role": "user", "content": math}
@@ -82,7 +81,7 @@ log_messages(response1["messages"])
 print("Final Answer:", response1["messages"][-1].content)
 
 
-city = input("enter message(for weather)")
+city = input("enter message(for weather) : ")
 response2 = agent.invoke({
     "messages": [
         {"role": "user", "content": city}
@@ -91,7 +90,7 @@ response2 = agent.invoke({
 log_messages(response2["messages"])
 print("Final Answer:", response2["messages"][-1].content)
 
-path = input("enter message(for weather)")
+path = input("enter file path")
 response3 = agent.invoke({
     "messages": [
         {"role": "user", "content": path}
