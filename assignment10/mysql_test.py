@@ -24,6 +24,12 @@ try:
     for row in rows:
         print(row)
 
+    cursor.execute("SELECT * FROM sample_table WHERE address = 'pune' ")
+    rows = cursor.fetchall()
+    for row in rows:
+        print(row)
+
+
     cursor.close()
     connection.close()
     print("connection closed")
