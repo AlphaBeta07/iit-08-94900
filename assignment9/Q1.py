@@ -8,8 +8,6 @@ import pandasql as ps
 from dotenv import load_dotenv
 load_dotenv()
 
-
-#llm model
 llm = init_chat_model(
     model = "llama-3.3-70b-versatile",
     model_provider = "openai",
@@ -25,7 +23,6 @@ def csv_tool(csv_path: str, sql_query: str) -> str:
     try:
         df = pd.read_csv(csv_path)
 
-        # clean SQL
         sql_query = sql_query.strip()
         if sql_query.lower().startswith("select") is False:
             return "Error: Invalid SQL generated"
