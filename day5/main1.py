@@ -20,6 +20,3 @@ while True:
     print("AI:", llm_output.content)
     llm_msg = {"role": "assistant", "content": llm_output.content}
     conversation.append(llm_msg)
-
-# Use slider value to decide how many last messages to be sent to LLM
-# instead of full conversation. This will limit the "context length".

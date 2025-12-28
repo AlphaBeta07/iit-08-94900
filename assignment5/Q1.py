@@ -2,25 +2,20 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
-# Chrome options
 options = Options()
 # options.add_argument("--headless")
 
-# Start driver
 driver = webdriver.Chrome(options=options)
 
-# Open website
 driver.get("https://www.sunbeaminfo.in/internship")
 print("Page Title:", driver.title)
 print("-" * 80)
 
 driver.implicitly_wait(5)
 
-# Get table body
 tbody = driver.find_element(By.TAG_NAME, "tbody")
 rows = tbody.find_elements(By.TAG_NAME, "tr")
 
-# Print data row by row in terminal
 for row in rows:
     cols = row.find_elements(By.TAG_NAME, "td")
 

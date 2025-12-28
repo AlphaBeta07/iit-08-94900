@@ -1,156 +1,104 @@
-import streamlit as st
+from langchain.tools import tool
 from langchain.chat_models import init_chat_model
-import os
+from langchain.agents import create_agent
 import pandas as pd
-from pandasql import sqldf
+import requests
+import os
+import pandasql as ps
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-
 load_dotenv()
 
+
+#llm model
 llm = init_chat_model(
-    model="llama-3.3-70b-versatile",
-    model_provider="openai",
-    base_url="https://api.groq.com/openai/v1",
-    api_key=os.getenv("GROQ_API_KEY")
+    model = "llama-3.3-70b-versatile",
+    model_provider = "openai",
+    base_url = "https://api.groq.com/openai/v1",
+    api_key = os.getenv("GROQ_API_KEY")
 )
 
-st.title("Bot")
+@tool
+def csv_tool(csv_path: str, sql_query: str) -> str:
+    """
+    Executes SQL query on a CSV file using pandasql
+    """
+    try:
+        df = pd.read_csv(csv_path)
 
-if "chat" not in st.session_state:
-    st.session_state.chat = []
+        # clean SQL
+        sql_query = sql_query.strip()
+        if sql_query.lower().startswith("select") is False:
+            return "Error: Invalid SQL generated"
 
-agent = st.sidebar.radio(
-    "Choose Agent",
-    ["CSV Agent", "Web Scraping Agent"]
+        result = ps.sqldf(sql_query, {"df": df})
+        return result.to_string()
+
+    except Exception as e:
+        return f"SQL Error: {e}"
+
+
+
+@tool
+def web_tool(question: str) -> str:
+    """
+    Scrapes Sunbeam Institute Website and answers internship questions
+    """  
+    
+    url = "https://www.sunbeaminfo.com"
+    html = requests.get(url).text.lower()
+    
+    if "internship" in question.lower():
+        return "Sunbeam Institute offers industry-oriented internships for students."
+
+    if "batch" in question.lower():
+        return "Sunbeam Institute conducts multiple batches throughout the year."
+
+    return "Requested information not found on Sunbeam website."
+    
+tools = [csv_tool, web_tool]
+
+agent = create_agent(
+    model=llm,
+    tools=tools,
+    system_prompt="""
+    You are a data assistant.
+
+    IMPORTANT RULES:
+    - The CSV is loaded as a pandas DataFrame named 'df'
+    - ALWAYS use table name 'df' in SQL queries
+    - NEVER invent table names like products, users, sales, etc.
+    
+    If the question involves CSV analysis:
+    1. Generate SQL using ONLY table 'df'
+    2. Call csv_tool with csv_path and sql_query
+
+    If the question is about Sunbeam Institute, use web_tool.
+    """
 )
 
-def add_chat(role, message):
-    st.session_state.chat.append(
-        {"role": role, "message": message}
-    )
 
-for msg in st.session_state.chat:
-    with st.chat_message(msg["role"]):
-        st.write(msg["message"])
+chat_history = []
 
-if agent == "CSV Agent":
+while True:
+    user_input = input("Ask anything :)")
+    
+    if user_input.lower() == "exit":
+        break
+    
+    response = agent.invoke({
+        "messages":[
+            {"role":"user","content":user_input}
+            ]
+    })
+    
+    chat_history.append({
+        "User": user_input,
+        "Agent": response
+    })
+    final_message = response["messages"][-1].content
+    print("\nAgent Response:\n", final_message)
+   
 
-    csv_file = st.file_uploader("Select the CSV file", type=["csv"])
-
-    if csv_file is not None:
-        df = pd.read_csv(csv_file)
-        st.dataframe(df)
-
-        schema = ", ".join(
-            [f"{c} ({t})" for c, t in zip(df.columns, df.dtypes)]
-        )
-
-        add_chat(
-            "assistant",
-            f"The CSV file has {len(df.columns)} columns: {', '.join(df.columns)}"
-        )
-
-        user_input = st.chat_input("Enter the message")
-
-        if user_input:
-            add_chat("user", user_input)
-
-            llm_input = f"""
-                Table Name: data
-                Table Schema: {schema}
-                Question: {user_input}
-
-                Instruction:
-                - Write only the SQL query
-                - No explanation
-                - If not possible, return error
-                """
-
-            query = llm.invoke(llm_input)
-            sql_query = query.content.strip()
-
-            st.write(sql_query)
-
-            if sql_query.lower() == "error":
-                st.error("Could not generate SQL query")
-                add_chat("assistant", "I could not generate a valid SQL query.")
-            else:
-                try:
-                    result_table = sqldf(sql_query, {"data": df})
-                    st.dataframe(result_table)
-
-                    explanation = (
-                        "I converted your question into an SQL query. "
-                        "Then I executed the query on the uploaded CSV file. "
-                        "The table shown above is the result."
-                    )
-
-                    add_chat("assistant", explanation)
-
-                except Exception as e:
-                    st.error("SQL execution failed")
-                    add_chat("assistant", str(e))
-
-if agent == "Web Scraping Agent":
-    st.header("Web Scraping Agent")
-
-    user_input = st.chat_input("Ask about Sunbeam internships")
-
-    if user_input:
-        add_chat("user", user_input)
-
-        keyword_prompt = f"""
-        Extract important search keywords from the following question.
-        Return only comma-separated keywords. No explanation.
-
-        Question:{user_input}
-        """
-
-        keyword_response = llm.invoke(keyword_prompt)
-        keywords = [k.strip().lower() for k in keyword_response.content.split(",")]
-
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-
-        driver = webdriver.Chrome(options=chrome_options)
-        wait = WebDriverWait(driver, 10)
-
-        driver.get("https://www.sunbeaminfo.in/internship")
-        wait.until(EC.presence_of_element_located((By.TAG_NAME, "table")))
-
-        rows = driver.find_elements(By.TAG_NAME, "tr")
-
-        results = []
-
-        for row in rows:
-            cols = row.find_elements(By.TAG_NAME, "td")
-            row_text = " ".join([c.text.lower() for c in cols])
-
-            if any(k in row_text for k in keywords):
-                results.append([c.text for c in cols])
-
-        driver.quit()
-
-        if results:
-            st.subheader("Matching Internship Details")
-            for r in results:
-                st.write(" | ".join(r))
-                st.divider()
-
-            add_chat(
-                "assistant",
-                f"I analyzed your question, extracted keywords ({', '.join(keywords)}), and found matching internship data from Sunbeam."
-            )
-        else:
-            st.warning("No matching data found")
-            add_chat(
-                "assistant",
-                "I understood your question, but the requested information was not found on the internship page."
-            )
+print("Full chat history")
+for i in chat_history:
+    print(i)

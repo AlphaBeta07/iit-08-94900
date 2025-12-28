@@ -2,7 +2,9 @@ import mysql.connector
 import streamlit as st
 from langchain.chat_models import init_chat_model
 import pandas as pd
-
+import os
+from dotenv import load_dotenv
+load_dotenv()  
 host = "localhost"
 user = "root"
 password = "manager"
@@ -13,10 +15,10 @@ st.set_page_config(page_title="MySQL Bot", layout="wide")
 st.title("MySQL Assistant")
 
 llm = init_chat_model(
-    model="google/gemma-3-4b",
+    model = "llama-3.3-70b-versatile",
     model_provider="openai",
-    base_url="http://localhost:1234/v1",
-    api_key="lm-studio"
+    base_url = "https://api.groq.com/openai/v1",
+    api_key = os.getenv("GROQ_API_KEY")
 )
 
 if "chat" not in st.session_state:

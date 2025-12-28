@@ -28,7 +28,6 @@ print("Status:", response.status_code)
 
 result = response.json()
 
-# ✅ SAFE response handling
 if response.status_code == 200 and "choices" in result:
     print(result["choices"][0]["message"]["content"])
 else:
