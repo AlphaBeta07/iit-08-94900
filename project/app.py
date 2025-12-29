@@ -1,51 +1,124 @@
-import streamlit as st
 import os
-from dotenv import load_dotenv
-from langchain.chat_models import init_chat_model
-from langchain.embeddings import init_embeddings
+import tempfile
+import streamlit as st
 import chromadb
+
+from dotenv import load_dotenv
+from chromadb.config import Settings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
 load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-GOOGLE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={GOOGLE_API_KEY}"
+st.set_page_config(page_title="Resume Manager", layout="wide")
+st.title("Resume Manager")
 
-GOOGLE_HEADERS = {"Content-Type": "application/json"}
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-llm = init_chat_model( #using cloud based api
-    model="gemini-2.5-flash-lite",
-    model_provider="google",
-    base_url = "https://api.groq.com/openai/v1",
-    api_key = os.getenv("GROQ_API_KEY")
+client = chromadb.Client(
+    Settings(
+        persist_directory="./chroma_db",
+        anonymized_telemetry=False
+    )
 )
 
-if "conversation" not in st.session_state:
-    st.session_state.conversation = []
+collection = client.get_or_create_collection("resumes")
 
-
-st.title("Resume Checker")
-
-menu = st.sidebar.selectbox(
-    "Menu",
-    ["Upload Resume","List Resumes","Delete Resumes","Shortlist Resumes"]
+llm = ChatOpenAI(
+    model="llama-3.3-70b-versatile",
+    base_url="https://api.groq.com/openai/v1",
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
-embedding_model = init_embeddings(
-    model="text-embedding-nomic-embed-text-v1.5-embedding",
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-nomic-embed-text-v1.5",
     provider="openai",
     base_url="http://127.0.0.1:1234/v1",
     api_key="not-needed",
     check_embedding_ctx_length=False
 )
 
-CHROMA_DIR = "chroma_db"
-
-client = chromadb.Client (
-    Settings(
-        persist_directory = CHROMA_DIR,
-        anonaymized_telemerty = False
-    )
+menu = st.sidebar.selectbox(
+    "Menu",
+    ["Upload Resume", "List Resumes", "Delete Resume", "Shortlist Resumes"]
 )
 
-coll
+def add_history(role, content):
+    st.session_state.history.append({"role": role, "content": content})
 
-st.file_uploader("Upload the resume file", type=["pdf", "docx"])
+if menu == "Upload Resume":
+    uploaded_file = st.file_uploader("Upload PDF Resume", type=["pdf"])
+
+    if uploaded_file and st.button("Process Resume"):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(uploaded_file.read())
+            file_path = tmp.name
+
+        loader = PyPDFLoader(file_path)
+        documents = loader.load()
+
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200
+        )
+
+        chunks = splitter.split_documents(documents)
+
+        for i, doc in enumerate(chunks):
+            vector = embeddings.embed_query(doc.page_content)
+            collection.add(
+                documents=[doc.page_content],
+                embeddings=[vector],
+                ids=[f"{uploaded_file.name}_{i}"]
+            )
+
+        st.success("Resume indexed successfully")
+
+if menu == "List Resumes":
+    results = collection.get()
+    resume_names = set(id.split("_")[0] for id in results["ids"])
+
+    if resume_names:
+        for name in resume_names:
+            st.write(name)
+    else:
+        st.info("No resumes found")
+
+if menu == "Delete Resume":
+    results = collection.get()
+    resume_names = sorted(set(id.split("_")[0] for id in results["ids"]))
+
+    resume_to_delete = st.selectbox("Select Resume", resume_names)
+
+    if st.button("Delete"):
+        ids_to_delete = [id for id in results["ids"] if id.startswith(resume_to_delete)]
+        collection.delete(ids=ids_to_delete)
+        st.success("Resume deleted")
+
+if menu == "Shortlist Resumes":
+    job_desc = st.text_area("Enter Job Description")
+
+    if st.button("Shortlist"):
+        query_vector = embeddings.embed_query(job_desc)
+        results = collection.query(
+            query_embeddings=[query_vector],
+            n_results=5
+        )
+
+        context = "\n\n".join(results["documents"][0])
+
+        prompt = f"""
+        You are an HR expert.
+        Based on the job description below, shortlist the most relevant resumes.
+
+        Job Description:
+        {job_desc}
+
+        Resumes:
+        {context}
+        """
+
+        response = llm.invoke(prompt)
+        st.write(response.content)
