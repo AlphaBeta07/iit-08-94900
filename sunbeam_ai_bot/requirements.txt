@@ -1,0 +1,6 @@
+streamlit
+selenium
+chromadb
+langchain
+python-dotenv
+webdriver-manager
